@@ -1,6 +1,11 @@
 const express = require('express') // import express
-
 const app = express(); // tạo instance từ đó
+const userRouter = require('./routes/userRoute')
+
+
+
+// phân tích data trong body của request và gắn vào reqbody
+app.use(express.json())
 
 // ROUTE nào định nghĩa sau middleWare thì mới được áp dụng
 app.use((req, res, next) => {
@@ -9,17 +14,19 @@ app.use((req, res, next) => {
 });
 
 // json.({}) => gui json response to client
-app.get('/api/v1/test', (req, res) =>{
-    res.status(200).json({
-        status: 'success',
-        message: "qua tuyt voi"
-    })
-})
+// app.get('/api/v1/test', (req, res) => {
+//     res.status(200).json({
+//         status: 'success',
+//         message: "qua tuyt voi"
+//     })
+// })
 
 // console.log(process.env)
 
-// phân tích data trong body của request và gắn vào reqbody
-app.use(express.json())
+
+// ROUTE
+
+app.use("/api/v1/users", userRouter)
 
 
 
