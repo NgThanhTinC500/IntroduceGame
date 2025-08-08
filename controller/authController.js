@@ -1,14 +1,22 @@
 const User = require('../model/userModel');
 const AppError = require('../utils/appError');
 const jwt = require('jsonwebtoken')
-const promisify = require('util')
+const { promisify } = require('util'); // convert callback to promise
+const sendEmail = require('../utils/emails');
 
 
 // CREATE TOKEN BASE ON USER ID
-const signToken = (id) =>
-    jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRES_IN,
-    });
+const signToken = (id) => {
+
+    return jwt.sign(
+        { id },
+        process.env.JWT_SECRET,
+        {
+            expiresIn: process.env.JWT_EXPIRES_IN,
+        }
+    );
+};
+
 
 
 const sendToken = (user, statusCode, res) => {
@@ -41,6 +49,7 @@ exports.signup = async (req, res, next) => {
         email: req.body.email,
         password: req.body.password,
         passwordConfirm: req.body.passwordConfirm,
+        // role: req.body.role,
     })
 
     // console.log(newUser)
@@ -84,9 +93,10 @@ exports.logout = (req, res) => {
 
 
 exports.protect = async (req, res, next) => {
-    var token;
+    let token;
     // postman =>  header
     // đảm bảo có authorization và có token sau bear
+    console.log("SECRET khi verify:", process.env.JWT_SECRET);
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         token = req.headers.authorization.split(' ')[1];
         // web login => cookie
@@ -102,7 +112,9 @@ exports.protect = async (req, res, next) => {
     // promisify(jwt.verify) => convert to Promise function
     // jwt.verify => verify token
     // lưu kết quả giải mã vào decoded
+
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET)
+
 
     // CHECK IF USER STILL EXIST
     const currentUser = await User.findById(decoded.id)
@@ -131,23 +143,30 @@ exports.forgotPassword = async (req, res, next) => {
 
     // LƯU VÀO DB
     await user.save({ validateBeforeSave: false });
-        // user.save() => lưu TẤT CẢ các thay đổi vào DB
+    // user.save() => lưu TẤT CẢ các thay đổi vào DB
 
+    const resetURL = `${req.protocol}://${req.get('host')}/api/v1/users/resetPassword/${tokenPassword}`;
     // SEND TO MAIL CLIENT
+    const message = `quen mật khẩu hả ? nhấn zô đây ${resetURL}`
 
+    await sendEmail({
+        email: user.email,
+        subject: 'THAY DOI PASS',
+        message,
+    })
 }
 
-exports.resetPassword = async(req, res, next) => {
+exports.resetPassword = async (req, res, next) => {
 
     // GET TOKEN
     const hashedToken = crypto
         .createHash('sha256')
         .update(req.params.token)
         .digest('hex');
-    
+
     // TIM NGƯỜI DÙNG CÓ TOKEN GIỐNG NHƯ CÁI ĐÃ LƯU VÀ KIỂM TRA HẠN SỬ DỤNG
     const user = await User.findOne
-    ({ passwordResetToken: hashedToken, passwordResetExpires : {$gt:Date.now()}})
+        ({ passwordResetToken: hashedToken, passwordResetExpires: { $gt: Date.now() } })
 
     if (!user) {
         return next(new AppError('Token is invalid or expired', 404))
@@ -181,3 +200,12 @@ exports.updatePassword = async (req, res, next) => {
 
     sendToken(user, 201, res)
 }
+
+
+exports.restricTO = (...roles) =>
+    (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return next(new AppError('ko co quyen', 403))
+        }
+        next();
+    }
