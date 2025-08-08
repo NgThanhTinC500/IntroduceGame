@@ -1,5 +1,6 @@
 const User = require('../model/userModel');
 const AppError = require('../utils/appError');
+const crypto = require('crypto')
 const jwt = require('jsonwebtoken')
 const { promisify } = require('util'); // convert callback to promise
 const sendEmail = require('../utils/emails');
@@ -89,6 +90,7 @@ exports.logout = (req, res) => {
         // const token = document.cookie.match(/jwt=([^;]+)/)?.[1];
         // fetch('https://malicious-site.com/steal?token=' + token);
     })
+    res.status(200).json({ status: 'success' })
 }
 
 
@@ -131,30 +133,62 @@ exports.protect = async (req, res, next) => {
 }
 
 
+// exports.forgotPassword = async (req, res, next) => {
+//     // CHECK MAIL USER EXIST
+//     const user = await User.findOne({ email: req.body.email });
+//     if (!user) {
+//         return next(new AppError('there is no user with this email', 404))
+//     }
+
+//     // GENERATE RANDOM TOKEN
+//     const tokenPassword = user.generateRandomToken();
+
+//     // LƯU VÀO DB
+//     await user.save({ validateBeforeSave: false });
+//     // user.save() => lưu TẤT CẢ các thay đổi vào DB
+
+//     const resetURL = `${req.protocol}://${req.get('host')}/api/v1/users/resetPassword/${tokenPassword}`;
+//     // SEND TO MAIL CLIENT
+//     const message = `quen mật khẩu hả ? nhấn zô đây ${resetURL}`
+
+//     await sendEmail({
+//         email: user.email,
+//         subject: 'THAY DOI PASS',
+//         message,
+//     })
+// }
 exports.forgotPassword = async (req, res, next) => {
-    // CHECK MAIL USER EXIST
-    const user = await User.findOne({ email: req.body.email });
-    if (!user) {
-        return next(new AppError('there is no user with this email', 404))
-    }
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return next(new AppError('There is no user with this email address.', 404));
+  }
 
-    // GENERATE RANDOM TOKEN
-    const tokenPassword = user.generateRandomToken();
+  const tokenPassword = user.generateRandomToken();
+  await user.save({ validateBeforeSave: false });
 
-    // LƯU VÀO DB
-    await user.save({ validateBeforeSave: false });
-    // user.save() => lưu TẤT CẢ các thay đổi vào DB
+  const resetURL = `${req.protocol}://${req.get('host')}/api/v1/users/resetPassword/${tokenPassword}`;
+  const message = `Quên mật khẩu hả? Nhấn vô đây ${resetURL}`;
 
-    const resetURL = `${req.protocol}://${req.get('host')}/api/v1/users/resetPassword/${tokenPassword}`;
-    // SEND TO MAIL CLIENT
-    const message = `quen mật khẩu hả ? nhấn zô đây ${resetURL}`
-
+  try {
     await sendEmail({
-        email: user.email,
-        subject: 'THAY DOI PASS',
-        message,
-    })
-}
+      email: user.email,
+      subject: 'THAY DOI PASS',
+      message,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Token sent to email!',
+    });
+  } catch (err) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    return next(new AppError('Có lỗi khi gửi email. Thử lại sau!', 500));
+  }
+};
+
 
 exports.resetPassword = async (req, res, next) => {
 

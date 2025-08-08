@@ -11,13 +11,13 @@ const sendEmail = async (options) => {
 
         auth: {
             user: process.env.EMAIL_USERNAME,
-            pass: process.env.EMAAIL_PASSWORD,
+            pass: process.env.EMAIL_PASSWORD,
         }
     })
 
     // MAIL OPTIONS
     const mailOptions = {
-        from: 'Thanh Tin <tinnguyenit04@gmail.com',
+        from: 'Thanh Tin <tinnguyenit04@gmail.com>',
         to: options.email,
         subject: options.subject,
         text: options.message,
