@@ -1,11 +1,22 @@
 const express = require('express') // import express
 const app = express(); // tạo instance từ đó
-const userRouter = require('./routes/userRoute')
+const userRouter = require('./routes/userRoute');
+const newsRouter = require('./routes/newsRoute');
+const morgan = require('morgan');
+const globalErrorHanlder = require('./controller/errorController')
+const viewRouter = require('./routes/viewRoute')
+const path = require('path')
 
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, 'views'))
 
 
 // phân tích data trong body của request và gắn vào reqbody
 app.use(express.json())
+
+if (process.env.NODE_ENV === "development") {
+    app.use(morgan("dev"))
+}
 
 // ROUTE nào định nghĩa sau middleWare thì mới được áp dụng
 app.use((req, res, next) => {
@@ -22,12 +33,17 @@ app.use((req, res, next) => {
 // })
 
 // console.log(process.env)
+app.use(express.json())
+
+
+app.use(express.static(path.join(__dirname, 'public')))
 
 
 // ROUTE
+app.use("/", viewRouter)
 
 app.use("/api/v1/users", userRouter)
+app.use("/api/v1/news", newsRouter)
 
-
-
+app.use(globalErrorHanlder)
 module.exports = app

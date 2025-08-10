@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer')
-const { options } = require('../app')
-const { text } = require('express')
+// const { options } = require('../app')
+// const { text } = require('express')
 
 
 const sendEmail = async (options) => {

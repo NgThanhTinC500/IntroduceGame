@@ -1,0 +1,29 @@
+extends base
+
+block content
+  // Banner
+  section#home.banner(style="background-image: url('/img/img-share.jpg');")
+    .banner-content
+      //- h2 Thế giới game đỉnh cao
+      //- p Khám phá những tựa game hot nhất năm 2025
+      //- a.btn(href="#about") Khám phá ngay
+
+  // Giới thiệu
+  section#about.about
+    .container
+      h2 Giới thiệu
+      p
+        | GameZone là nơi hội tụ những tựa game đình đám, mang đến trải nghiệm đồ họa đỉnh cao và gameplay mượt mà.
+        | Chúng tôi cập nhật tin tức game mới nhất và tổ chức các sự kiện eSports hoành tráng.
+
+  // Tin tức
+  section#news.news
+    .container
+      h2 Tin tức mới nhất
+      .news-list
+        each item_news in news
+          article.news-item
+            span=item_news.tags
+            img(src=`/img/news/${item_news.image}`, alt="Tin 1")
+            h3=item_news.title
+            p=item_news.content

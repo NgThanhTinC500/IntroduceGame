@@ -1,0 +1,16 @@
+extends base
+
+block content
+    .login-container
+      form.login-form(action="/login", method="POST")
+        h2.login-title Đăng nhập
+        .login-group
+          label.login-label(for="username") Tên đăng nhập
+          input#username.login-input(type="text", name="username", required)
+        .login-group
+          label.login-label(for="password") Mật khẩu
+          input#password.login-input(type="password", name="password", required)
+        button.login-btn(type="submit") Đăng nhập
+        p.login-register
+          | Chưa có tài khoản?
+          a(href="/register") Đăng ký
